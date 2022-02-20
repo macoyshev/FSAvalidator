@@ -1,2 +1,2 @@
 Error:
-E5: Input file is malformed
+E3: A transition 'turn_off' is not represented in the alphabet

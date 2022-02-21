@@ -1,2 +1,3 @@
-Error:
-E3: A transition 'turn_off' is not represented in the alphabet
+FSA is complete
+Warning:
+W1: Accepting state is not defined

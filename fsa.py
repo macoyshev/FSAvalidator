@@ -1,6 +1,7 @@
+
 import re
 
-
+#class contains all existing Errors
 class Errors:
     output = "result.txt"
 
@@ -39,11 +40,12 @@ class Errors:
         stream.close()
         exit(0)
 
-
+#class contains all existing Warnings;
 class Warnings:
 
     output: str = "result.txt"
-    isOneWar = False;
+    isOneWar = False
+    branchCount = 0;
     
     @staticmethod
     def oneWarMess():
@@ -76,7 +78,7 @@ class Warnings:
         stream.write("\nW3: FSA is nondeterministic")
         stream.close()
 
-
+#parse data: delete unnecessary symbols
 def parse(data: list):
     checkFormat(data)
         
@@ -106,7 +108,7 @@ def parse(data: list):
     
     return data;
 
-
+#check that all states in inints, fins and trans are in states
 def checkStates(states, inits, fins, trans):
     #checking states in trans
     for i in range(0, len(trans), 3):
@@ -123,18 +125,18 @@ def checkStates(states, inits, fins, trans):
         if st not in states:
             Errors.undefinedState(st)
 
-
+#init state cannot be empty
 def checkInitState(inits):
     if (len(inits) == 0):
         Errors.undefinedUnitialState()
 
-
+#check that all weights in trans were in the alphabet
 def checkAlphabet(trans, alphas):
     for i in range(1, len(trans), 3):
         if trans[i] not in alphas:
             Errors.undefinedTransion(trans[i])
 
-
+#comparing with pattern
 def checkFormat(data):
     if (len(data) != 5):
         Errors.malformedInput()
@@ -150,65 +152,62 @@ def checkFormat(data):
     if (len(result) == 0):
         Errors.malformedInput()
 
-
-def checkReachability(inits,trans):
-    nodes = []
-    tree = []
-    
-    tree.append(inits)
-    
-    for i in range(len(trans)):
-        if i % 3 != 1:
-            nodes.append(trans[i])
-        
-    for i in range(1, len(nodes), 2):
-        if (len(tree) == 0):
-            tree.append([nodes[i], nodes[i-1]])
-            continue
-    
-        index1 = getIndexOfBranch(tree,nodes[i])
-        index2 = getIndexOfBranch(tree,nodes[i - 1])
-        
-        if (index1 == index2 and index1 != -1):
-            continue
-        
-        if index1 != -1 and index2 != -1:
-            newBranch = tree[index1] + tree[index2]
-            tree.append(newBranch)
-            tree.pop(index1)
-            tree.pop(index2)
-            continue
-            
-        if index1 == -1 and index2 == -1:
-            tree.append([nodes[i], nodes[i-1]])
-            continue
-        
-        if index1 == -1:
-            tree[index2].append(nodes[i])
-        else:
-            tree[index2].append(nodes[i-1])
-            
-    if len(tree) != 1:
-        Warnings.unreachableStates()
- 
- 
+#represent trans as a graph and if there are some remote branch that means that some states are disjoint              
 def checkDisjoint(trans):
     nodes = []
+    tree = []
     for i in range(len(trans)):
         if i % 3 != 1:
             nodes.append(trans[i])
+            
     for i in range(1, len(nodes), 2):
         if (nodes[i] == nodes[i - 1]):
-            Errors.disjointStates()
-
-
+            if (len(tree) == 0):
+                tree.append([nodes[i]])
+                continue
+            
+            index = getIndexOfBranch(tree,nodes[i])
+            if index == -1:
+                tree.append([nodes[i]])
+            
+        else:
+            index1 = getIndexOfBranch(tree,nodes[i])
+            index2 = getIndexOfBranch(tree,nodes[i - 1])
+            
+            if (index1 == index2 and index1 != -1):
+                continue
+            
+            if index1 != -1 and index2 != -1:
+                newBranch = tree[index1] + tree[index2]
+                tree.append(newBranch)
+                tree.pop(index1)
+                tree.pop(index2)
+                continue
+                
+            if index1 == -1 and index2 == -1:
+                tree.append([nodes[i], nodes[i-1]])
+                continue
+            
+            if index1 == -1:
+                tree[index2].append(nodes[i])
+            else:
+                tree[index2].append(nodes[i-1])
+     
+    Warnings.branchCount = len(tree);
+            
+    if (len(tree) != 1):
+        for branch in tree:
+            if len(branch) == 1:
+                Errors.disjointStates()
+                
+#support function for checkDisjoint
 def isInAnyBranch(tree, node):
     for branch in tree:
         if node in branch:
             return True
     return False
 
-
+#support function for checkDisjoint
 def getIndexOfBranch(tree, node):
     for i in range(len(tree)):
         if node in tree[i]:
@@ -216,7 +215,7 @@ def getIndexOfBranch(tree, node):
         
     return -1;
 
-
+#if the state uses all alphas-> complete
 def isFsaComplete(alphas, trans):
     nodes = set()
     cons = {}
@@ -230,7 +229,6 @@ def isFsaComplete(alphas, trans):
         
     for i in range(0, len(trans), 3):
         cons[trans[i]].add(trans[i + 1])
-        cons[trans[i + 2]].add(trans[i + 1])
 
     setAl = set(alphas)
     for vals in cons.values():
@@ -238,6 +236,7 @@ def isFsaComplete(alphas, trans):
             return False
     return True
 
+#write completeness of fsa
 def writeFsaIsComplete(val):
     stream = open("result.txt", "w")
     if val:
@@ -252,6 +251,19 @@ def checkAcceptingState(fins):
         Warnings.undefinedAcceptedState()
 
 
+def checkReachability(trans):
+    allStates = set()
+    reachalbe = set()
+    for i in range(0, len(trans), 3):
+        if (trans[i] != trans[i + 2]):
+            reachalbe.add(trans[i + 2])
+            allStates.add(trans[i])
+            allStates.add(trans[i + 2])
+    
+    if allStates != reachalbe:
+        Warnings.unreachableStates()
+
+#union of all checking operations
 def validate(data: list):
     
     states = data[0]
@@ -272,7 +284,7 @@ def validate(data: list):
     
     checkAcceptingState(fins)
     
-    checkReachability(inits,trans)
+    checkReachability(trans)
 
 
 def main():

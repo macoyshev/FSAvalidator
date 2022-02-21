@@ -1,3 +1,4 @@
-FSA is complete
+FSA is incomplete
 Warning:
 W1: Accepting state is not defined
+W2: Some states are not reachable from the initial state

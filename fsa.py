@@ -245,12 +245,12 @@ def writeFsaIsComplete(val):
         stream.write("FSA is incomplete")
     stream.close()
     
-
+#check is accept state is specified
 def checkAcceptingState(fins):
     if len(fins) == 0:
         Warnings.undefinedAcceptedState()
 
-
+#check is point reachable
 def checkReachability(trans):
     allStates = set()
     reachalbe = set()
@@ -286,7 +286,7 @@ def validate(data: list):
     
     checkReachability(trans)
 
-
+#main
 def main():
     stream = open("fsa.txt", "r")
     data = stream.readlines()
